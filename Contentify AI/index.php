@@ -11,6 +11,7 @@ function create_api_key_authentication() {
     register_rest_route( 'contentify/v1', '/create-post/', array(
         'methods' => 'POST',
         'callback' => 'create_post_with_api_key',
+        'permission_callback' => '__return_true',
     ) );
 }
 
@@ -88,13 +89,17 @@ function contentify_settings() {
     );
 }
 
+function contentify_settings_section_callback() {
+    echo 'Please enter your Contentify API key to allow the AI to post and optimize your blogs';
+}
+
 // Register the plugin's settings
 add_action( 'admin_init', 'register_contentify_settings' );
 function register_contentify_settings() {
     register_setting( 'contentify_settings', 'contentify_api_key' );
     add_settings_section(
         'contentify_settings_section',
-        'Please enter your Contentify API key to allow the AI to post and optimize your blogs',
+        'Contentify API Key',
         'contentify_settings_section_callback',
         'contentify_settings'
     );
@@ -109,11 +114,10 @@ function register_contentify_settings() {
 
 // Display the API key form field
 function contentify_api_key_callback() {
-    $api_key = get_option( 'contentify_api_key' );
-    ?>
-    <input type="password" name="contentify_api_key" value="<?php echo esc_attr( $api_key ); ?>">
-    <?php
+    $api_key = get_option('contentify_api_key');
+    echo "<input type='password' name='contentify_api_key' value='$api_key'/>";
 }
+
 
 function validate_api_key( $api_key ) {
     // Get the user-defined API key
