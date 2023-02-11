@@ -15,6 +15,32 @@ function create_api_key_authentication() {
     ) );
 }
 
+add_action( 'rest_api_init', 'create_get_website_title_endpoint' );
+function create_get_website_title_endpoint() {
+    register_rest_route( 'contentify/v1', '/website-title/', array(
+        'methods' => 'POST',
+        'callback' => 'get_website_title_with_api_key',
+        'permission_callback' => '__return_true',
+    ) );
+}
+
+function get_website_title_with_api_key( $data ) {
+
+    $api_key = $data->get_param( 'api_key' );
+
+    // Validate the API key
+    if ( !validate_api_key( $api_key ) ) {
+        return new WP_Error( 'invalid_api_key', 'The API key provided is invalid', array( 'status' => 401 ) );
+    }
+    
+    // Use the WordPress function to get the current website title
+    $title = get_option( 'blogname' );
+    
+    // Return the title
+    return array( 'website_title' => $title );
+}
+
+
 function create_post_with_api_key( $data ) {
     $author = $data->get_param( 'author' );
     $api_key = $data->get_param( 'api_key' );
