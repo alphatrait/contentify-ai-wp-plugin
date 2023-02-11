@@ -4,6 +4,8 @@ Tags: ai, chatgpt, contentify, ai writer
 Requires at least: 5.9 or higher
 Tested up to: 6.1.1
 Requires PHP: 7.0 or higher
+License: MIT License
+License URI: https://raw.githubusercontent.com/phosphor-icons/phosphor-home/master/LICENSE
 
 Publish optimized blogs using AI algorithms such as ChatGPT. Automate your content creation using Contentify.
 
