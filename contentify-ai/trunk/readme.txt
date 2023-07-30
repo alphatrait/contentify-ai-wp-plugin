@@ -1,9 +1,10 @@
-=== Contentify WP Co-Editor ===
-Contributors: alphatrait
-Tags: ai, chatgpt, contentify, ai writer
-Requires at least: 5.9 or higher
-Tested up to: 6.1.1
-Requires PHP: 7.0 or higher
+=== Contentify AI ===
+Contributors: Contentify AI
+Tags: ai, chatgpt, contentify, ai writer, gpt-4, gpt
+Requires at least: 5.9
+Tested up to: 6.2.2
+Requires PHP: 7.0
+Stable tag: 1.0.0
 License: MIT License
 License URI: https://raw.githubusercontent.com/phosphor-icons/phosphor-home/master/LICENSE
 
