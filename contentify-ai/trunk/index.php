@@ -2,7 +2,7 @@
 /*
 Plugin Name: Contentify AI
 Description: This plugin is a Contentify Editor AI (Co-Editor). It publishes and optimize the content that Contentify Writer AI (Co-Writer) generates.
-Version: 1.2.0
+Version: 1.3.1
 Author: Contentify Team
 Text Domain: contentify-ai
 */
@@ -155,82 +155,88 @@ if (!class_exists('Contentify_AI_Class')) {
 			return $blogs;
 		}
 
-		// Callback function to update an existing blog
-		public function update_blog($data)
-		{
-			$post_id = $data->get_param('post_id');
-			$api_key = $data->get_param('api_key');
-			$title = $data->get_param('title');
-			$content = $data->get_param('content');
-			$status = $data->get_param('status');
-			$keyword = $data->get_param('keyword');
-			$seo_title = $data->get_param('seo_title');
-			$seo_description = $data->get_param('seo_description');
-			$category = $data->get_param('category');
-			$image = $data->get_param('image');
+// Callback function to update an existing blog
+public function update_blog($data) {
+    $post_id = $data->get_param('post_id');
+    $api_key = $data->get_param('api_key');
+    $title = $data->get_param('title');
+    $content = $data->get_param('content');
+    $status = $data->get_param('status');
+    $keyword = $data->get_param('keyword');
+    $seo_title = $data->get_param('seo_title');
+    $seo_description = $data->get_param('seo_description');
+    $category = $data->get_param('category');
+    $image = $data->get_param('image');
 
-			// Validate the API key
-			if (!$this->validate_api_key($api_key)) {
-				return new WP_Error('invalid_api_key', __('The API key provided is invalid', 'contentify-ai'), array('status' => 401));
-			}
+    // Validate the API key
+    if (!$this->validate_api_key($api_key)) {
+        return new WP_Error('invalid_api_key', __('The API key provided is invalid', 'contentify-ai'), array('status' => 401));
+    }
 
-			// Check if the post exists
-			$post = get_post($post_id);
-			if (!$post) {
-				return new WP_Error('post_not_found', __('The specified post ID does not exist', 'contentify-ai'), array('status' => 404));
-			}
+    // Check if the post exists
+    $post = get_post($post_id);
+    if (!$post) {
+        return new WP_Error('post_not_found', __('The specified post ID does not exist', 'contentify-ai'), array('status' => 404));
+    }
 
-			// Get the user by login or email
-			$user = get_user_by('login', $author);
-			if (!$user) {
-				$user = get_user_by('email', $author);
-			}
-			$author_id = $user->ID;
+    // Get the user by login or email
+    $user = get_user_by('login', $author);
+    if (!$user) {
+        $user = get_user_by('email', $author);
+    }
+    $author_id = $user->ID;
 
-			// Validate post status
-			$status = strtolower($status);
-			if (!isset(get_post_statuses()[$status]))
-				$status = 'publish';
+    // Validate post status
+    $status = strtolower($status);
+    if (!isset(get_post_statuses()[$status]))
+        $status = 'publish';
 
-			// Category
-			$term_id = 0;
-			if (!empty($category)) {
-				$term = get_term_by('name', $category, 'category');
-				if (!$term instanceof WP_Term) {
-					$term = wp_insert_term($category, 'category');
-					if (is_array($term))
-						$term_id = $term['term_id'];
-				} else {
-					$term_id = $term->term_id;
-				}
-			}
+    // Category
+    $term_id = 0;
+    if (!empty($category)) {
+        $term = get_term_by('name', $category, 'category');
+        if (!$term instanceof WP_Term) {
+            $term = wp_insert_term($category, 'category');
+            if (is_array($term))
+                $term_id = $term['term_id'];
+        } else {
+            $term_id = $term->term_id;
+        }
+    }
 
-			// Update the post
-			$post_args = array(
-				'ID' => $post_id,
-				'post_title' => $title,
-				'post_content' => $content,
-				'post_status' => $status,
-				'post_author' => $author_id,
-				'post_category' => array($term_id)
-			);
-			wp_update_post($post_args);
+    // Temporarily remove the content filter
+    remove_filter('content_save_pre', 'wp_filter_post_kses');
 
-			// Update Yoast SEO keyword, title, and description
-			update_post_meta($post_id, '_yoast_wpseo_focuskw', $keyword);
-			update_post_meta($post_id, '_yoast_wpseo_title', $seo_title);
-			update_post_meta($post_id, '_yoast_wpseo_metadesc', $seo_description);
+    // Update the post
+    $post_args = array(
+        'ID' => $post_id,
+        'post_title' => $title,
+        'post_content' => $content,
+        'post_status' => $status,
+        'post_author' => $author_id,
+        'post_category' => array($term_id)
+    );
+    wp_update_post($post_args);
 
-			if (!empty($image)) {
-				$attachment_id = $this->cai_upload_from_url($image, $title);
-				if ($attachment_id) {
-					set_post_thumbnail($post_id, $attachment_id);
-				}
-			}
+    // Re-add the content filter
+    add_filter('content_save_pre', 'wp_filter_post_kses');
 
-			// Return the updated post ID
-			return array('updated_post_id' => $post_id);
-		}
+    // Update Yoast SEO keyword, title, and description
+    update_post_meta($post_id, '_yoast_wpseo_focuskw', $keyword);
+    update_post_meta($post_id, '_yoast_wpseo_title', $seo_title);
+    update_post_meta($post_id, '_yoast_wpseo_metadesc', $seo_description);
+
+    if (!empty($image)) {
+        $attachment_id = $this->cai_upload_from_url($image, $title);
+        if ($attachment_id) {
+            set_post_thumbnail($post_id, $attachment_id);
+        }
+    }
+
+    // Return the updated post ID
+    return array('updated_post_id' => $post_id);
+}
+
 
 
 
@@ -344,6 +350,9 @@ if (!class_exists('Contentify_AI_Class')) {
 					$term_id = $term->term_id;
 				}
 			}
+			
+			remove_filter('content_save_pre', 'wp_filter_post_kses');
+
 
 			// Create the post
 			$post_id = wp_insert_post(
@@ -355,6 +364,10 @@ if (!class_exists('Contentify_AI_Class')) {
 					'post_category' => array($term_id)
 				)
 			);
+			
+			
+			add_filter('content_save_pre', 'wp_filter_post_kses');
+
 
 
 			//Update Yoast SEO keyword, title, and description
